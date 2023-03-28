@@ -18,6 +18,7 @@ router.post('/new', [
 router.post('/',[
     check('email', 'Email required').isEmail(),
     check('password', 'Password required. Min length 5').isLength({min: 5}),
+    validateFields
 ], login);
 
 // Validate and Renew Token
