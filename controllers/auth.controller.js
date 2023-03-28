@@ -1,6 +1,7 @@
 
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const { generateJWT } = require('../helpers/jwt');
 
 
 const register =  async(req, res) => {
@@ -24,6 +25,7 @@ const register =  async(req, res) => {
         dbUser.password = bcrypt.hashSync(password, salt);
 
         // generate jwt
+        const token = await generateJWT(dbUser.id, dbUser.name);
 
         // create database user
         await dbUser.save();
@@ -32,7 +34,8 @@ const register =  async(req, res) => {
         return res.status(201).json({
             ok: true,
             uid: dbUser.id,
-            name: dbUser.name
+            name: dbUser.name,
+            token: token
         });
 
 
