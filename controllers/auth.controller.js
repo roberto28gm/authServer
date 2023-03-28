@@ -50,20 +50,52 @@ const register =  async(req, res) => {
     
 }
 
-const login = (req, res) => {
+
+const login = async (req, res) => {
     const { email, password} = req.body;
+
+    try {
+        const dbUser = await User.findOne({email: email});
+        // TODO: dbUser.password nullable --> throw exception
+        const validPassword = bcrypt.compareSync(password, dbUser.password); 
+
+        if(!dbUser || !validPassword) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'Email or password incorrect'
+            });
+        }
+        const token = await generateJWT(dbUser.id, dbUser.name);
+        return res.json({
+            ok: true,
+            uid: dbUser.uid,
+            name: dbUser.name,
+            token: token
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            ok: false,
+            msg: 'Login failed'
+        });
+    }
+
+}
+
+
+const renew = async (req, res) => {
+    const {uid, name} = req;
+    const newToken = await generateJWT(uid, name);
+    
     return res.json({
         ok: true,
-        msg: 'Login user /'
+        uid: uid,
+        name: name,
+        newToken: newToken
     });
 }
 
-const renew = (req, res) => {
-    return res.json({
-        ok: true,
-        msg: 'Renew /'
-    });
-}
 
 module.exports = {
     register,
