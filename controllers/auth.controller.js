@@ -35,6 +35,7 @@ const register =  async(req, res) => {
             ok: true,
             uid: dbUser.id,
             name: dbUser.name,
+            email: email,
             token: token
         });
 
@@ -56,22 +57,32 @@ const login = async (req, res) => {
 
     try {
         const dbUser = await User.findOne({email: email});
-        // TODO: dbUser.password nullable --> throw exception
-        const validPassword = bcrypt.compareSync(password, dbUser.password); 
+        
+        if(dbUSer){
+            const validPassword = bcrypt.compareSync(password, dbUser.password);
 
-        if(!dbUser || !validPassword) {
+            if(!validPassword) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Email or password incorrect'
+                });
+            }
+            const token = await generateJWT(dbUser.id, dbUser.name);
+            console.log(dbUser);
+            return res.json({
+                ok: true,
+                uid: dbUser.id,
+                name: dbUser.name,
+                email: dbUser.email,
+                token: token
+            });
+        } else {
             return res.status(400).json({
                 ok: false,
                 msg: 'Email or password incorrect'
             });
         }
-        const token = await generateJWT(dbUser.id, dbUser.name);
-        return res.json({
-            ok: true,
-            uid: dbUser.uid,
-            name: dbUser.name,
-            token: token
-        });
+        
 
     } catch (error) {
         console.log(error);
@@ -85,14 +96,16 @@ const login = async (req, res) => {
 
 
 const renew = async (req, res) => {
-    const {uid, name} = req;
-    const newToken = await generateJWT(uid, name);
+    const { uid } = req;
+    const dbUser = await User.findById(uid);
+    const newToken = await generateJWT(uid, dbUser.name);
     
     return res.json({
         ok: true,
         uid: uid,
-        name: name,
-        newToken: newToken
+        name: dbUser.name,
+        email: dbUser.email,
+        token: newToken
     });
 }
 
